@@ -1,6 +1,6 @@
-# Rasperry PI Toolchains
+# Raspberry Pi Toolchains
 
-Repository for Raspberry PI cross compiler using the new GCC8 and GCC9 for Raspbian Buster.
+Repository for Raspberry Pi cross compiler using the new GCC10 for Raspbian Buster.
 This supports all new Raspberry PIs (ARMv7), and the older ones, including Zero, A, B, B+ (ARMv6) with newer GCCs.
 
 You can probably also use this repository for any other ARMv6 and ARMv7 devices.
@@ -20,34 +20,12 @@ https://solarianprogrammer.com/2018/05/06/building-gcc-cross-compiler-raspberry-
 A similar project can also be found here, but it only includes the compiled toolchains, which did not work out of the box for me:
 https://sourceforge.net/projects/raspberry-pi-cross-compilers
 
-## How to get the toolchain
-
-You have two options:
-
-- Use the prebuilt toolchain attached to every github release (recommended)
-- Build the toolchain yourself
-
-### Use pre-built toolchain
-
-Every github release has a pre-build toolchain attached.
-See
-
-1. Download the toolchain:
-```bash
-wget https://github.com/Pro/raspi-toolchain/releases/latest/download/raspi-toolchain.tar.gz
-```
-2. Extract it. Note: The toolchain has to be in `/opt/cross-pi-gcc` since it's not location independent.
-```bash
-sudo tar xfz raspi-toolchain.tar.gz --strip-components=1 -C /opt
-```
-3. You are done!
-
 ### Build the toolchain from source
 
 To build the toolchain, just clone this repository and then call:
 
 ```bash
-docker build -f Dockerfile --network=host -t gcc9-rpi-zero .
+docker build -f Dockerfile --network=host -t gcc-rpi-zero .
 ```
 
 This will take some time since it builds a docker container with the gcc compiler.
@@ -55,7 +33,7 @@ This will take some time since it builds a docker container with the gcc compile
 To run the docker container, use
 
 ```bash
-docker run -it gcc9-rpi-zero bash
+docker run -it gcc-rpi-zero bash
 ```
 
 ### Install from source after building
@@ -63,7 +41,7 @@ docker run -it gcc9-rpi-zero bash
 To get the toolchain from the docker container into your host, just copy the files:
 
 ```bash
-CONTAINER_ID=$(docker create gcc9-rpi-zero)
+CONTAINER_ID=$(docker create gcc-rpi-zero)
 sudo docker cp $CONTAINER_ID:/opt/cross-pi-gcc /opt/cross-pi-gcc
 ```
 

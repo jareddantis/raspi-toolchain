@@ -1,27 +1,27 @@
 # https://solarianprogrammer.com/2018/05/06/building-gcc-cross-compiler-raspberry-pi/
 
-# Ubuntu 18.04 at the time of writing (2019-04-02)
-FROM ubuntu:latest
+# Latest on Pi 0W at the time of writing (2022-12-14)
+FROM debian:bullseye
 
 # This should match the one on your raspi
-ENV GCC_VERSION gcc-8.3.0
-ENV GLIBC_VERSION glibc-2.28
-ENV BINUTILS_VERSION binutils-2.31.1
+ENV GCC_VERSION gcc-10.2.0
+ENV GLIBC_VERSION glibc-2.31
+ENV BINUTILS_VERSION binutils-2.35.2
 ARG DEBIAN_FRONTEND=noninteractive
 
 
 # Install some tools and compilers + clean up
 RUN apt-get update && \
-    apt-get install -y rsync git wget gcc-8 g++-8 cmake gdb gdbserver bzip2 && \
+    apt-get install -y rsync git wget build-essential cmake gdb gdbserver bzip2 && \
     apt-get clean autoclean && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
 
 # Use GCC 8 as the default
-RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 999 \
- && update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-8 999 \
- && update-alternatives --install /usr/bin/cc  cc  /usr/bin/gcc-8 999 \
- && update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-8 999
+RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 999 \
+ && update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 999 \
+ && update-alternatives --install /usr/bin/cc  cc  /usr/bin/gcc-10 999 \
+ && update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-10 999
 
 # Add a user called `develop`
 RUN useradd -ms /bin/bash develop
@@ -43,7 +43,6 @@ RUN wget https://ftp.gnu.org/gnu/binutils/${BINUTILS_VERSION}.tar.bz2 && \
     rm ${BINUTILS_VERSION}.tar.bz2
 # Download the GCC prerequisites
 RUN cd ${GCC_VERSION} && contrib/download_prerequisites && rm *.tar.*
-#RUN cd gcc-9.2.0 && contrib/download_prerequisites && rm *.tar.*
 
 # Build BinUtils
 RUN mkdir -p /opt/cross-pi-gcc
@@ -78,8 +77,20 @@ RUN apt-get update && \
 WORKDIR /home/develop
 RUN git clone --depth=1 https://github.com/raspberrypi/linux
 WORKDIR /home/develop/linux
-ENV KERNEL=kernel7
+# Possible values for KERNEL:
+#   kernel     Pi 1, Pi Zero, Pi Zero W    (32-bit)
+#   kernel7    Pi 2, Pi 3                  (32-bit)
+#   kernel7l   Pi 4                        (32-bit)
+#   kernel8    Pi 3, Pi 4                  (64-bit)
+ENV KERNEL=kernel
 RUN make ARCH=arm INSTALL_HDR_PATH=/opt/cross-pi-gcc/arm-linux-gnueabihf headers_install
+
+# Apply GLIBC patch for newer GCC
+# Warning: Might not be needed for newer versions of GLIBC
+WORKDIR /home/develop/${GLIBC_VERSION}
+RUN wget -O glibc.patch 'https://gist.githubusercontent.com/jareddantis/e3695eed5c3afc1776381654b4bbb33b/raw/e21e93fd00d622a2c63dd6f86f8c83152e727859/glibc-2.31-gcc-10.patch' && \
+    patch -p1 < glibc.patch && \
+    rm glibc.patch
 
 # Build GLIBC
 WORKDIR /home/develop/build-glibc
